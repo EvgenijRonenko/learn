@@ -1,70 +1,61 @@
-import React, {useEffect, useState} from 'react';
-import logo from './logo.svg';
+import React, {useState} from 'react';
 import './App.css';
-import {SuperButton} from "./components/SuperButton";
-import {SuperInput} from "./components/SuperInput";
+import {Todolist} from './Todolist';
+import {v1} from 'uuid';
 
 
-type PropsType = {
-    userId: number,
-    id: number,
-    title: string,
-    completed: boolean
-}
+export type FilterValuesType = 'all' | 'active' | 'completed';
 
 function App() {
 
-    const [data, setData] = useState<PropsType[]>([])
-    const [inputTitle, setInputTitle] = useState<string>('')
-    console.log(data)
+    let [tasks, setTasks] = useState([
+        {id: v1(), title: 'HTML&CSS', isDone: true},
+        {id: v1(), title: 'JS', isDone: true},
+        {id: v1(), title: 'ReactJS', isDone: false},
+        {id: v1(), title: 'Rest API', isDone: false},
+        {id: v1(), title: 'GraphQL', isDone: false},
+    ]);
 
-
-    useEffect(() => {
-        fetch('https://jsonplaceholder.typicode.com/todos')
-            .then(response => response.json())
-            .then(json => setData(json))
-    }, [])
-
-    const getData = () => {
-        fetch('https://jsonplaceholder.typicode.com/todos')
-            .then(response => response.json())
-            .then(json => setData(json))
+    function removeTask(id: string) {
+        let filteredTasks = tasks.filter(t => t.id != id);
+        setTasks(filteredTasks);
     }
 
-    const removeData = () => {
-        setData([])
+    function addTask(title: string) {
+        let task = {id: v1(), title: title, isDone: false};
+        let newTasks = [task, ...tasks];
+        setTasks(newTasks);
     }
 
-    const addNewData = () => {
-        const newData= {userId: 666, id: data.length+1, title: inputTitle, completed: false}
-        setData([newData, ...data])
-        setInputTitle('')
+    const changeTaskStatus = (taskId: string, isDone: boolean) => {
+        setTasks(tasks.map(t => t.id === taskId ? {...t, isDone: t.isDone} : t))
+    }
+
+    let [filter, setFilter] = useState<FilterValuesType>('all');
+
+    let tasksForTodolist = tasks;
+
+    if (filter === 'active') {
+        tasksForTodolist = tasks.filter(t => t.isDone === false);
+    }
+    if (filter === 'completed') {
+        tasksForTodolist = tasks.filter(t => t.isDone === true);
+    }
+
+    function changeFilter(value: FilterValuesType) {
+        setFilter(value);
     }
 
 
     return (
         <div className="App">
-            <div>
-                <SuperInput setInputTitle={setInputTitle} inputTitle={inputTitle}/>
-                <SuperButton title={'Add new data'} callBack={addNewData}/>
-            </div>
-
-            <div>
-                <SuperButton title={"Show me data"} callBack={getData}/>
-                <SuperButton title={"Remove data"} callBack={removeData}/>
-            </div>
-
-            <ul>
-                {data.map(el => {
-                    return (
-                        <li key={el.id}>
-                            <span>{el.id} - </span>
-                            <span>{el.title}</span>
-                            <input type={'checkbox'} checked={el.completed}/>
-                        </li>
-                    )
-                })}
-            </ul>
+            <Todolist title="What to learn"
+                      tasks={tasksForTodolist}
+                      removeTask={removeTask}
+                      changeFilter={changeFilter}
+                      addTask={addTask}
+                      changeTaskStatus={changeTaskStatus}
+                      filter={filter}/>
         </div>
     );
 }
